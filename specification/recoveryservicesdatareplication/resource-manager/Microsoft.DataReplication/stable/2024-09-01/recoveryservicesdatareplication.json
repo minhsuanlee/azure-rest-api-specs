@@ -5478,11 +5478,13 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Gets or sets the Id."
+          "description": "Gets or sets the Id.",
+          "readOnly": true
         },
         "name": {
           "type": "string",
-          "description": "Gets or sets the operation name."
+          "description": "Gets or sets the operation name.",
+          "readOnly": true
         },
         "status": {
           "type": "string",

@@ -80,7 +80,11 @@ suppressions:
     reason: These properties have already shipped in the previous API version.
     where:
       - $.definitions.OperationStatus
-
+  
+  - code: RequiredPropertiesMissingInResourceModel
+    reason: These properties have already shipped in the previous API version.
+    where:
+      - $.definitions.OperationStatus
 ```
 
 ---

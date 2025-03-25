@@ -2144,11 +2144,13 @@ model OperationStatus {
   /**
    * Gets or sets the Id.
    */
+  @visibility(Lifecycle.Read)
   id?: string;
 
   /**
    * Gets or sets the operation name.
    */
+  @visibility(Lifecycle.Read)
   name?: string;
 
   /**
