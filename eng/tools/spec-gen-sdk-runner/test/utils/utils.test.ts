@@ -1,29 +1,31 @@
-import { describe, test, expect } from "vitest";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import {
   findFilesRecursive,
   findReadmeFiles,
+  getArgumentValue,
   getRelativePathFromSpecification,
+  mapToObject,
+  normalizePath,
+  objectToMap,
 } from "../../src/utils.js";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
 
 // Get the absolute path to the repo root
 const currentFilePath = fileURLToPath(import.meta.url);
-const repoRoot = path.resolve(path.dirname(currentFilePath), "../../../../../");
+const repoRoot = path.resolve(path.dirname(currentFilePath), "../fixtures/");
 
 describe("Utils", () => {
   describe("findFilesRecursive", () => {
     test("finds all tspconfig.yaml files recursively", () => {
-      const results = findFilesRecursive(
-        `${repoRoot}/specification/contosowidgetmanager`,
-        "tspconfig.yaml",
-      );
+      const searchPath = path.normalize(`${repoRoot}/specification/contosowidgetmanager`);
+      const results = findFilesRecursive(searchPath, "tspconfig.yaml");
       expect(results).toHaveLength(2);
       expect(results).toContain(
-        "specification/contosowidgetmanager/Contoso.Management/tspconfig.yaml",
+        path.normalize("specification/contosowidgetmanager/Contoso.Management/tspconfig.yaml"),
       );
       expect(results).toContain(
-        "specification/contosowidgetmanager/Contoso.WidgetManager/tspconfig.yaml",
+        path.normalize("specification/contosowidgetmanager/Contoso.WidgetManager/tspconfig.yaml"),
       );
     });
 
@@ -46,10 +48,15 @@ describe("Utils", () => {
 
   describe("findReadmeFiles", () => {
     test("finds all readme.md files in directory", () => {
-      const results = findReadmeFiles(`${repoRoot}/specification/contosowidgetmanager`);
+      const searchPath = path.normalize(`${repoRoot}/specification/contosowidgetmanager`);
+      const results = findReadmeFiles(searchPath);
       expect(results).toHaveLength(2);
-      expect(results).toContain("specification/contosowidgetmanager/resource-manager/readme.md");
-      expect(results).toContain("specification/contosowidgetmanager/data-plane/readme.md");
+      expect(results).toContain(
+        path.normalize("specification/contosowidgetmanager/resource-manager/readme.md"),
+      );
+      expect(results).toContain(
+        path.normalize("specification/contosowidgetmanager/data-plane/readme.md"),
+      );
     });
 
     test("returns empty array for directory without readme files", () => {
@@ -60,12 +67,20 @@ describe("Utils", () => {
     });
   });
 
+  describe("getArgumentValue", () => {
+    test("return the argument value", () => {
+      const args = ["--batch-type", "all-specs", "--pr-number", "9527"];
+      const result = getArgumentValue(args, "--batch-type", "");
+      expect(result).toBe("all-specs");
+    });
+  });
+
   describe("getRelativePathFromSpecification", () => {
     test("extracts path from specification folder", () => {
       const result = getRelativePathFromSpecification(
-        "/repo/root/specification/apicenter/resource-manager/readme.md",
+        path.normalize("/repo/root/specification/apicenter/resource-manager/readme.md"),
       );
-      expect(result).toBe("specification/apicenter/resource-manager/readme.md");
+      expect(result).toBe(path.normalize("specification/apicenter/resource-manager/readme.md"));
     });
 
     test("returns original path if specification is not found", () => {
@@ -76,14 +91,73 @@ describe("Utils", () => {
 
     test("handles paths with multiple specification occurrences", () => {
       const result = getRelativePathFromSpecification(
-        "/repo/root/specification/old/specification/apicenter/readme.md",
+        path.normalize("/repo/root/specification/old/specification/apicenter/readme.md"),
       );
-      expect(result).toBe("specification/old/specification/apicenter/readme.md");
+      expect(result).toBe(path.normalize("specification/old/specification/apicenter/readme.md"));
     });
 
     test("handles empty path", () => {
       const result = getRelativePathFromSpecification("");
       expect(result).toBe("");
+    });
+  });
+
+  describe("mapToObject", () => {
+    test("converts Map to Object correctly", () => {
+      const map = new Map([
+        ["key1", "value1"],
+        ["key2", "value2"],
+      ]);
+      const result = mapToObject(map);
+      expect(result).toEqual({ key1: "value1", key2: "value2" });
+    });
+
+    test("handles empty Map", () => {
+      const map = new Map();
+      const result = mapToObject(map);
+      expect(result).toEqual({});
+    });
+  });
+
+  describe("objectToMap", () => {
+    test("converts Object to Map correctly", () => {
+      const obj = { key1: "value1", key2: "value2" };
+      const result = objectToMap(obj);
+      expect(result).toEqual(
+        new Map([
+          ["key1", "value1"],
+          ["key2", "value2"],
+        ]),
+      );
+    });
+
+    test("handles empty Object", () => {
+      const obj = {};
+      const result = objectToMap(obj);
+      expect(result).toEqual(new Map());
+    });
+  });
+
+  describe("normalizePath", () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    test("normalizePath in Windows", () => {
+      vi.spyOn(process, "platform", "get").mockReturnValue("win32");
+      /* eslint-disable unicorn/prefer-string-raw */
+      const path = "specification\\contosowidgetmanager\\Contoso.WidgetManager.Shared\\main.tsp";
+      const convertPath =
+        "specification/contosowidgetmanager/Contoso.WidgetManager.Shared/main.tsp";
+      const result = normalizePath(path);
+      expect(result).toEqual(convertPath);
+    });
+
+    test("normalizePath in Linux", () => {
+      vi.spyOn(process, "platform", "get").mockReturnValue("linux");
+      const path = "specification/contosowidgetmanager/Contoso.WidgetManager.Shared/main.tsp";
+      const result = normalizePath(path);
+      expect(result).toEqual(path);
     });
   });
 });

@@ -6,10 +6,13 @@ using Azure.ClientGenerator.Core;
 @TypeSpec.Versioning.useDependency(KeyVault.Versions.`v7.5`)
 namespace ClientCustomizations;
 
-@client({
-  name: "Client",
-  service: KeyVault,
-})
+@client(
+  {
+    name: "Client",
+    service: KeyVault,
+  },
+  "go"
+)
 interface Client {
   #suppress "@azure-tools/typespec-azure-core/use-standard-operations" "Doesn't fit standard ops"
   fullBackup is KeyVault.fullBackup;
@@ -17,14 +20,31 @@ interface Client {
   fullRestore is KeyVault.fullRestoreOperation;
   #suppress "@azure-tools/typespec-azure-core/use-standard-operations" "Doesn't fit standard ops"
   selectiveKeyRestore is KeyVault.selectiveKeyRestoreOperation;
+  #suppress "@azure-tools/typespec-azure-core/use-standard-operations" "Doesn't fit standard ops"
+  preFullBackup is KeyVault.preFullBackup;
+  #suppress "@azure-tools/typespec-azure-core/use-standard-operations" "Doesn't fit standard ops"
+  preFullRestore is KeyVault.preFullRestoreOperation;
 }
 
-@@clientName(KeyVault.SASTokenParameter, "SASTokenParameters", "go");
-@@clientName(KeyVault.RestoreOperationParameters.sasTokenParameters,
+using KeyVault;
+
+@@clientName(SASTokenParameter, "SASTokenParameters", "go");
+@@clientName(RestoreOperationParameters.sasTokenParameters,
   "SASTokenParameters",
   "go"
 );
-@@clientName(KeyVault.SelectiveKeyRestoreOperationParameters.sasTokenParameters,
+@@clientName(SelectiveKeyRestoreOperationParameters.sasTokenParameters,
   "SASTokenParameters",
   "go"
 );
+@@clientName(PreRestoreOperationParameters.sasTokenParameters,
+  "SASTokenParameters",
+  "go"
+);
+
+@@alternateType(FullBackupOperation.status, string, "go");
+@@alternateType(RestoreOperation.status, string, "go");
+@@alternateType(SelectiveKeyRestoreOperation.status, string, "go");
+@@alternateType(FullBackupOperation.error, string, "go");
+@@alternateType(RestoreOperation.error, string, "go");
+@@alternateType(SelectiveKeyRestoreOperation.error, string, "go");
